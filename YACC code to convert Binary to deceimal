@@ -1,0 +1,73 @@
+Lex/YACC Code to Convert Binary to Decimal:
+c
+Copy code
+%{
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+void convert_to_decimal(char *binary);
+%}
+
+%token BINARY
+
+%%
+
+input:
+    BINARY { convert_to_decimal($1); }
+;
+
+%%
+
+void convert_to_decimal(char *binary) {
+    int decimal = 0;
+    int length = 0;
+
+    // Calculate the length of the binary string
+    while (binary[length] != '\0') {
+        length++;
+    }
+
+    // Convert binary to decimal
+    for (int i = 0; i < length; i++) {
+        if (binary[i] == '1') {
+            decimal += pow(2, length - 1 - i);
+        }
+    }
+
+    printf("Binary: %s\n", binary);
+    printf("Decimal: %d\n", decimal);
+}
+
+int yylex(void) {
+    int c;
+
+    // Skip spaces
+    while ((c = getchar()) == ' ');
+
+    // If it's a binary number, capture it
+    if (c == '0' || c == '1') {
+        ungetc(c, stdin);
+        char binary[32];
+        int i = 0;
+
+        while ((c = getchar()) == '0' || c == '1') {
+            binary[i++] = c;
+        }
+        binary[i] = '\0';
+        yylval = (int) binary;  // Store the binary string
+        return BINARY;
+    }
+
+    // EOF handling
+    if (c == EOF) return 0;
+    
+    return c; // Return any other character
+}
+
+int main() {
+    printf("Enter a binary number: ");
+    yyparse();
+    return 0;
+}
+
