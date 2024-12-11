@@ -1,0 +1,27 @@
+lex
+Copy code
+%{
+#include <stdio.h>
+
+int lines = 0;    // Counter for lines
+int spaces = 0;   // Counter for spaces
+int tabs = 0;     // Counter for tabs
+%}
+
+%%
+
+\n          { lines++; }     // Increment line count for each newline
+" "         { spaces++; }    // Increment space count for each space
+"\t"        { tabs++; }      // Increment tab count for each tab
+.           { /* Ignore other characters */ }
+
+%%
+
+int main() {
+    yylex();  // Start lexical analysis
+    printf("Lines: %d\n", lines);
+    printf("Spaces: %d\n", spaces);
+    printf("Tabs: %d\n", tabs);
+    return 0;
+}
+
