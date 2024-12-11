@@ -1,0 +1,68 @@
+Simple Lex/YACC Code:
+c
+Copy code
+%{
+#include <stdio.h>
+#include <stdlib.h>
+
+void convert_to_binary(int n);
+%}
+
+%token DECIMAL
+
+%%
+
+input:
+    DECIMAL   { convert_to_binary($1); }
+;
+
+%%
+
+void convert_to_binary(int n) {
+    printf("Decimal: %d\n", n);
+    
+    if (n == 0) {
+        printf("Binary: 0\n");
+        return;
+    }
+
+    int binary[32], i = 0;
+
+    while (n > 0) {
+        binary[i++] = n % 2;
+        n = n / 2;
+    }
+
+    printf("Binary: ");
+    for (int j = i - 1; j >= 0; j--) {
+        printf("%d", binary[j]);
+    }
+    printf("\n");
+}
+
+int yylex(void) {
+    int c;
+
+    // Skip spaces
+    while ((c = getchar()) == ' ');
+
+    // If it's a digit, read the number
+    if (c >= '0' && c <= '9') {
+        ungetc(c, stdin);
+        int num;
+        scanf("%d", &num);
+        yylval = num;  // Store the number in yylval
+        return DECIMAL;
+    }
+
+    // EOF handling
+    if (c == EOF) return 0;
+    
+    return c; // Return any other character
+}
+
+int main() {
+    printf("Enter a decimal number: ");
+    yyparse();
+    return 0;
+}
