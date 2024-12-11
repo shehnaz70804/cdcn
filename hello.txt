@@ -1,0 +1,1668 @@
+CN programs
+Byte Stuffing
+Working
+#include <bits/stdc++.h>
+using namespace std;
+
+void print(vector<string> &words, ofstream &outFile){
+    int noOfWords = words.size();
+    for(int i = 0; i < noOfWords; i++){
+        outFile << words[i] << " ";
+        cout << words[i] << " ";
+    }
+    outFile << endl;
+    cout << endl;
+}
+
+void getWords(vector<string>& words, const string& text){
+    string curr = "";
+    int i = 0;
+    int n = text.length();
+    while (i < n) {
+        if (text[i] == ' ') {
+            if (curr.length() != 0) {
+                words.push_back(curr);
+            }
+            curr = "";
+        } else {
+            curr += text[i];
+        }
+        i++;
+    }
+    if (curr.length() != 0) {
+        words.push_back(curr);
+    }
+}
+
+void byteStuffing(vector<string>& result, const string& text){
+    int textSize = text.length();
+    result.push_back("flag");
+    vector<string> words;
+    getWords(words, text);
+    int noOfWords = words.size();
+    for (int i = 0; i < noOfWords; i++) {
+        if (words[i] == "flag") {
+            result.push_back("esc");
+        } else if (words[i] == "esc") {
+            result.push_back("esc");
+        }
+        result.push_back(words[i]);
+    }
+    result.push_back("flag");
+}
+
+void byteDeStuffing(vector<string>& result, vector<string>& result2){
+    int n = result.size();
+    for (int i = 1; i < n - 1; i++) {
+        if (result[i] == "esc") {
+            result2.push_back(result[i + 1]);
+            i++;
+        } else {
+            result2.push_back(result[i]);
+        }
+    }
+}
+
+int main() {
+    string text;
+    vector<string> result;
+    vector<string> result2;
+   
+    // Open input and output files
+    ifstream inFile("input.txt");
+    ofstream outFile("output.txt");
+   
+    if (!inFile.is_open() || !outFile.is_open()) {
+        cerr << "Error opening file(s)." << endl;
+        return 1;
+    }
+   
+    // Read from input file
+    cout << "Sender's side" << endl;
+    inFile >> ws; // to ignore any leading whitespace
+    getline(inFile, text);
+    
+    cout << "Before byte stuffing: ";
+    cout << text << endl;
+    
+    byteStuffing(result, text);
+   
+    // Write byte-stuffed result to output file
+    cout << "After byte stuffing: ";
+    print(result, outFile);
+   
+    // Close the input file and re-open the output file for the receiver's side
+    inFile.close();
+    outFile.close();
+   
+    ifstream inFile2("output.txt");
+    ofstream outFile2("de-stuffed.txt");
+   
+    if (!inFile2.is_open() || !outFile2.is_open()) {
+        cerr << "Error opening file(s)." << endl;
+        return 1;
+    }
+   
+    // Read byte-stuffed data from output file
+    vector<string> stuffedResult;
+    string word;
+    cout << "Receiver's Side" << endl;
+    cout << "Received data: ";
+    while (inFile2 >> word) {
+        stuffedResult.push_back(word);
+        cout << word << " ";
+    }
+    cout << endl;
+   
+    // Perform byte de-stuffing
+    byteDeStuffing(stuffedResult, result2);
+   
+    // Write de-stuffed result to new file
+    cout << "After byte de-stuffing: ";
+    print(result2, outFile2);
+    // Close files
+    inFile2.close();
+    // outFile2.close();
+   
+    return 0;
+}
+Bit Stuffing
+Working
+#include <bits/stdc++.h>
+using namespace std;
+
+string charToBinary(char ch) {
+    string binary = "";
+    for (int i = 7; i >= 0; i--) {
+        binary += ((ch >> i) & 1) ? '1' : '0';
+    }
+    return binary;
+}
+
+string bitStuffing(string s) {
+    string stuffed = "";
+    int count = 0;
+    int n = s.size();
+    for (int i = 0; i < n; i++) {
+        stuffed += s[i];
+        if (s[i] == '1') {
+            count++;
+            if (count == 5) {
+                stuffed += '0';
+                count = 0;
+            }
+        } else {
+            count = 0;
+        }
+    }
+    return stuffed;
+}
+
+string bitDeStuffing(string s) {
+    string destuffed = "";
+    int count = 0;
+    int n1 = s.size();
+    for (int i = 8; i < n1 - 8; i++) { // Skip flag bits
+        destuffed += s[i];
+        if (s[i] == '1') {
+            count++;
+            if (count == 5) {
+                i++;
+                count = 0;
+            }
+        } else {
+            count = 0;
+        }
+    }
+    return destuffed;
+}
+
+int main() {
+    string s;
+    // Open input and output files
+    ifstream inFile("input.txt");
+    ofstream outFile("output.txt");
+   
+    if (!inFile.is_open() || !outFile.is_open()) {
+        cerr << "Error opening file(s)." << endl;
+        return 1;
+    }
+    // Read from input file
+    getline(inFile, s);
+    inFile.close();
+
+    // Display original text
+    cout << "Sender's side" << endl;
+    cout << "Before Bit Stuffing: " << s << endl;
+
+    // Convert string into binary string
+    string binaryString = "";
+    int textLen = s.length();
+    for (int i = 0; i < textLen; i++) {
+        binaryString += charToBinary(s[i]);
+    }
+
+    // Divide into frames of size 8
+    vector<string> frames, stuffedFrames, destuffedFrames;
+    int binStringLen = binaryString.size();
+    for (int i = 0; i < binStringLen; i = i + 8) {
+        frames.push_back(binaryString.substr(i, 8));
+    }
+   
+    // Perform Bit Stuffing
+    cout << "\nFrames and After Bit Stuffing:" << endl;
+    for (int i = 0; i < frames.size(); i++) {
+        string stuffed = "01111110" + bitStuffing(frames[i]) + "01111110";
+        stuffedFrames.push_back(stuffed);
+        cout << stuffed << endl;
+    }
+
+    // Concatenate stuffed frames for output
+    string stuffedText = "";
+    for (string str : stuffedFrames) {
+        stuffedText += str;
+    }
+
+    // Write stuffed result to output file
+    outFile << stuffedText;
+    outFile.close();
+
+    // Receiver's side
+    cout << "\nReceiver's side" << endl;
+
+    // Re-open output file to read stuffed text
+    ifstream inFile2("output.txt");
+    string receivedText = "";
+    getline(inFile2, receivedText);
+    inFile2.close();
+
+    // Display received text in frames
+    vector<string> receivedFrames;
+    for (int i = 0; i < receivedText.size(); i += 24) { // Each frame is 24 bits (8 flag + 8 data + 8 flag)
+        receivedFrames.push_back(receivedText.substr(i, 24));
+    }
+   
+    cout << "Received text (in frames):" << endl;
+    for (int i = 0; i < receivedFrames.size(); i++) {
+        cout << receivedFrames[i] << endl;
+    }
+
+    // Perform De-stuffing
+    cout << "\nFrames and After Bit De-stuffing:" << endl;
+    for (int i = 0; i < receivedFrames.size(); i++) {
+        string destuffed = bitDeStuffing(receivedFrames[i]);
+        destuffedFrames.push_back(destuffed);
+        cout <<  destuffed << endl;
+    }
+
+    return 0;
+}
+CRC Polynomial Code
+Working
+#include <bits/stdc++.h>
+using namespace std;
+
+// Function to convert polynomial string to binary
+string polynomialToBinary(const string& poly, int crcLevel) {
+    int maxDegree = crcLevel;
+    string binary(maxDegree + 1, '0');
+    for (size_t i = 0; i < poly.length(); i++) {
+        if (poly[i] == 'x') {
+            int degree = std::stoi(poly.substr(i + 1));
+            binary[binary.length() - degree - 1] = '1';
+        }
+    }
+    return binary;
+}
+
+// Function to perform XOR division
+string xorDivision(string dividend, const string& divisor) {
+    int divLen = divisor.length();
+    for (size_t i = 0; i <= dividend.length() - divLen; i++) {
+        if (dividend[i] == '1') {
+            for (size_t j = 0; j < divLen; j++) {
+                dividend[i + j] = (dividend[i + j] == divisor[j]) ? '0' : '1';
+            }
+        }
+    }
+    return dividend.substr(dividend.length() - (divLen - 1));
+}
+
+int main() {
+    string data;
+    int crcLevel;
+    string polynomial;
+    // Input from the user
+    std::cout << "Enter the data to be sent: ";
+    std::cin >> data;
+    std::cout << "Enter CRC level (8/10/16/32): ";
+    std::cin >> crcLevel;
+    std::cout << "Enter the CRC polynomial (x^0 should be x0): ";
+    std::cin >> polynomial;
+
+    // Convert polynomial to binary
+    std::string divisor = polynomialToBinary(polynomial,crcLevel);
+
+    // Print Sender's side
+    std::cout << "\nSender's side" << std::endl;
+    std::cout << "Divisor: " << divisor << std::endl;
+    std::cout << "Data: " << data << std::endl;
+
+    // Append zeros for CRC calculation
+    std::string appendedData = data + std::string(divisor.length() - 1, '0');
+    std::string crc = xorDivision(appendedData, divisor);
+    std::cout << "CRC: " << crc << std::endl;
+
+    // Generate codeword
+    std::string codeword = data + crc;
+    std::cout << "Codeword: " << codeword << "\n" << std::endl;
+
+    // Print Receiver's side
+    cout << "Receiver's side" << endl;
+    cout << "Case 1:" << endl;
+    cout << "Codeword: " << codeword << endl;
+    cout << "Divisor: " << divisor << endl;
+
+    // Perform XOR division on the received codeword
+    std::string syndrome = xorDivision(codeword, divisor);
+    std::cout << "Syndrome: " << syndrome << std::endl;
+
+    if (syndrome.find('1') == std::string::npos) {
+        cout << "Codeword has no error. Hence accepted." << endl;
+    } else {
+        cout << "Codeword has errors. Hence rejected." << endl;
+    }
+    
+    cout << endl;
+    codeword[0]='0';
+    cout << "Case 2:" << endl;
+    cout << "Codeword: " << codeword << endl;
+    cout << "Divisor: " << divisor << endl;
+
+    // Perform XOR division on the received codeword
+    syndrome = xorDivision(codeword, divisor);
+    cout << "Syndrome: " << syndrome << endl;
+
+    if (syndrome.find('1') == string::npos) {
+        cout << "Codeword has no error. Hence accepted." << endl;
+    } else {
+        cout << "Codeword has errors. Hence rejected." << endl;
+    }
+    return 0;
+}
+Dijkstra’s Algorithm
+Change input to dynamic, Working
+#include <bits/stdc++.h>
+using namespace std;
+
+#define V 9
+
+// A utility function to find the vertex with minimum distance value,
+// from the set of vertices not yet included in the shortest path tree
+int minDistance(int dist[], bool sptSet[]) {
+    int min = INT_MAX, min_index;
+
+    for (int v = 0; v < V; v++)
+        if (sptSet[v] == false && dist[v] <= min)
+            min = dist[v], min_index = v;
+
+    return min_index;
+}
+
+// A utility function to print the constructed distance array and paths
+void printSolution(int dist[], int parent[], int src) {
+    cout << "Vertex \t Distance from Source \t Path" << endl;
+    for (int i = 0; i < V; i++) {
+        cout << i << " \t\t " << dist[i] << " \t\t\t ";
+        // Print path
+        vector<int> path;
+        int current = i;
+        while (current != -1) {
+            path.insert(path.begin(), current);
+            current = parent[current];
+        }
+        for (int j = 0; j < path.size(); j++) {
+            cout << path[j];
+            if (j < path.size() - 1) cout << " -> ";
+        }
+        cout << endl;
+    }
+}
+
+// Function that implements Dijkstra's single source shortest path algorithm
+void dijkstra(int graph[V][V], int src) {
+    int dist[V]; // The output array. dist[i] will hold the shortest distance from src to i
+    bool sptSet[V]; // sptSet[i] will be true if vertex i is included in the shortest path tree
+    int parent[V]; // To store the shortest path tree
+
+    // Initialize all distances as INFINITE and sptSet[] as false
+    for (int i = 0; i < V; i++) {
+        dist[i] = INT_MAX;
+        sptSet[i] = false;
+        parent[i] = -1; // Initialize parent of each vertex as -1
+    }
+
+    // Distance of source vertex from itself is always 0
+    dist[src] = 0;
+
+    // Find shortest path for all vertices
+    for (int count = 0; count < V - 1; count++) {
+        // Pick the minimum distance vertex from the set of vertices not yet processed
+        int u = minDistance(dist, sptSet);
+
+        // Mark the picked vertex as processed
+        sptSet[u] = true;
+
+        // Update dist value and parent of the adjacent vertices of the picked vertex
+        for (int v = 0; v < V; v++) {
+            // Update dist[v] only if not in sptSet, there is an edge from u to v,
+            // and total weight of path from src to v through u is smaller than current dist[v]
+            if (!sptSet[v] && graph[u][v] && dist[u] != INT_MAX && dist[u] + graph[u][v] < dist[v]) {
+                dist[v] = dist[u] + graph[u][v];
+                parent[v] = u; // Set parent of v as u
+            }
+        }
+    }
+
+    // Print the constructed distance array and paths
+    printSolution(dist, parent, src);
+}
+
+int main() {
+    int graph[V][V] = { { 0, 4, 0, 0, 0, 0, 0, 8, 0 },
+                        { 4, 0, 8, 0, 0, 0, 0, 11, 0 },
+                        { 0, 8, 0, 7, 0, 4, 0, 0, 2 },
+                        { 0, 0, 7, 0, 9, 14, 0, 0, 0 },
+                        { 0, 0, 0, 9, 0, 10, 0, 0, 0 },
+                        { 0, 0, 4, 14, 10, 0, 2, 0, 0 },
+                        { 0, 0, 0, 0, 0, 2, 0, 1, 6 },
+                        { 8, 11, 0, 0, 0, 0, 1, 0, 7 },
+                        { 0, 0, 2, 0, 0, 0, 6, 7, 0 } };
+
+    // Function call
+    dijkstra(graph, 0);
+    return 0;
+}
+
+CD programs
+Stream of Tokens
+Working, may not on devc++
+#include <iostream>
+#include <fstream>
+#include <regex>
+#include <string>
+#include <unordered_set>
+using namespace std;
+
+// Define sets of keywords and operators
+unordered_set<string> keywords = {
+    "int", "float", "double", "char", "if", "else", "for", "while", "return",
+    "void", "break", "continue", "switch", "case", "struct", "class", "public", "private"
+};
+unordered_set<string> operators = {
+    "+", "-", "*", "/", "%", "&&", "||", "!", "=", "==", "!=", "<", "<=", ">", ">=", 
+    "&", "|", "^", "~", "<<", ">>", "++", "--"
+};
+unordered_set<string> other_operators = {
+    ",", ";", "(", ")", "{", "}", "[", "]", ".", "->"
+};
+
+// Function to categorize tokens
+void categorizeTokens(const string& code) {
+    regex tokenRegex(R"((\/\/.*|\/\*[\s\S]*?\*\/)|(#.*)|(\b\w+\b)|(\S))");
+    smatch match;
+    string::const_iterator searchStart(code.cbegin());
+
+    while (regex_search(searchStart, code.cend(), match, tokenRegex)) {
+        string token = match[0];
+
+        if (token.rfind("//", 0) == 0) {
+            cout << "Single-line comment: " << token << endl;
+        } else if (token.rfind("/*", 0) == 0) {
+            cout << "Multi-line comment: " << token << endl;
+        } else if (token.rfind("#", 0) == 0) {
+            cout << "Preprocessor directive: " << token << endl;
+        } else if (keywords.count(token)) {
+            cout << "Keyword: " << token << endl;
+        } else if (operators.count(token)) {
+            cout << "Operator: " << token << endl;
+        } else if (other_operators.count(token)) {
+            cout << "Other operator: " << token << endl;
+        } else if (regex_match(token, regex(R"(\w+)"))) {
+            cout << "Identifier: " << token << endl;
+        } else {
+            cout << "Unknown token: " << token << endl;
+        }
+        searchStart = match.suffix().first;
+    }
+}
+
+int main() {
+    string code;
+    cout << "Enter the code (end with a single `#` line):" << endl;
+    string line;
+    while (getline(cin, line) && line != "#") {
+        code += line + '\n';
+    }
+
+    categorizeTokens(code);
+    return 0;
+}
+
+First and Follow programs
+May not work in devc++
+#include <bits/stdc++.h>
+using namespace std;
+
+// Function to calculate First set
+void computeFirst(map<char, set<char>> &firstSet, map<char, vector<string>> &productions, char nonTerminal) {
+    for (const auto &production : productions[nonTerminal]) {
+        for (char symbol : production) {
+            if (!isupper(symbol)) { // Terminal or epsilon
+                firstSet[nonTerminal].insert(symbol);
+                break;
+            } else { // Non-terminal
+                if (firstSet[symbol].empty()) {
+                    computeFirst(firstSet, productions, symbol);
+                }
+                firstSet[nonTerminal].insert(firstSet[symbol].begin(), firstSet[symbol].end());
+                if (firstSet[symbol].find('e') == firstSet[symbol].end()) { // 'e' denotes epsilon
+                    break;
+                }
+            }
+        }
+    }
+}
+
+// Function to calculate Follow set
+void computeFollow(map<char, set<char>> &followSet, map<char, set<char>> &firstSet, map<char, vector<string>> &productions, char startSymbol) {
+    followSet[startSymbol].insert('$'); // Start symbol gets end-of-input marker
+
+    for (const auto &production : productions) {
+        char nonTerminal = production.first;
+        for (const string &rule : production.second) {
+            for (size_t i = 0; i < rule.size(); ++i) {
+                if (isupper(rule[i])) { // Non-terminal
+                    bool foundEpsilon = true;
+                    for (size_t j = i + 1; j < rule.size(); ++j) {
+                        if (!isupper(rule[j])) { // Terminal
+                            followSet[rule[i]].insert(rule[j]);
+                            foundEpsilon = false;
+                            break;
+                        } else { // Non-terminal
+                            followSet[rule[i]].insert(firstSet[rule[j]].begin(), firstSet[rule[j]].end());
+                            if (firstSet[rule[j]].find('e') == firstSet[rule[j]].end()) {
+                                foundEpsilon = false;
+                                break;
+                            } else {
+                                followSet[rule[i]].erase('e');
+                            }
+                        }
+                    }
+                    if (foundEpsilon || i == rule.size() - 1) {
+                        followSet[rule[i]].insert(followSet[nonTerminal].begin(), followSet[nonTerminal].end());
+                    }
+                }
+            }
+        }
+    }
+}
+
+int main() {
+    map<char, vector<string>> productions;
+    map<char, set<char>> firstSet, followSet;
+
+    int n;
+    cout << "Enter number of productions: ";
+    cin >> n;
+    cout << "Enter the productions (e.g., S->AB):\n";
+    for (int i = 0; i < n; ++i) {
+        string input;
+        cin >> input;
+        char nonTerminal = input[0];
+        string production = input.substr(3); // Skip the "->"
+        productions[nonTerminal].push_back(production);
+    }
+
+    // Compute First sets
+    for (const auto &production : productions) {
+        if (firstSet[production.first].empty()) {
+            computeFirst(firstSet, productions, production.first);
+        }
+    }
+
+    // Compute Follow sets
+    char startSymbol;
+    cout << "Enter the start symbol: ";
+    cin >> startSymbol;
+    computeFollow(followSet, firstSet, productions, startSymbol);
+
+    // Display First sets
+    cout << "First Sets:\n";
+    for (const auto &entry : firstSet) {
+        cout << "First(" << entry.first << ") = { ";
+        for (char symbol : entry.second) {
+            cout << symbol << " ";
+        }
+        cout << "}\n";
+    }
+
+    // Display Follow sets
+    cout << "\nFollow Sets:\n";
+    for (const auto &entry : followSet) {
+        cout << "Follow(" << entry.first << ") = { ";
+        for (char symbol : entry.second) {
+            cout << symbol << " ";
+        }
+        cout << "}\n";
+    }
+
+    return 0;
+}
+
+Will work in devc++
+#include<bits/stdc++.h>
+using namespace std;
+
+set<char> calc_first(char nt, vector< pair < char , vector <string> > > &gram, int n) {
+    vector<string> der;
+    set<char> ff;
+    int ind = -1;
+
+    // Search for the non-terminal in the grammar
+    for (int i = 0; i < n; i++) {
+        if (gram[i].first == nt) {
+            der = gram[i].second;
+            ind = i;
+            break;
+        }
+    }
+
+    // Process each string in the grammar for the non-terminal
+    for (int i = 0; i < der.size(); i++) {
+        if (!isupper(der[i][0])) {
+            ff.insert(der[i][0]); // If it's a terminal, insert directly
+        } else {
+            int index = 0;
+            while (index < n) {
+                bool eps = false;
+                set<char> der2 = calc_first(der[i][index], gram, n);
+
+                // Replace range-based for loop with iterator
+                for (set<char>::iterator it = der2.begin(); it != der2.end(); ++it) {
+                    char x = *it;
+                    if (x == '#') eps = true; // Epsilon symbol
+                    ff.insert(x);
+                }
+
+                if (eps) {
+                    index++;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+    return ff;
+}
+
+set<char> calc_follow(char nt, vector< pair < char , vector <string> > > &gram, int n) {
+    set<char> fl;
+    if (nt == gram[0].first) fl.insert('$');
+    
+    for (int i = 0; i < n; i++) {
+        vector<string> grstrings = gram[i].second;
+        for (int k = 0; k < grstrings.size(); k++) {
+            string grs = grstrings[k];
+            for (int j = 0; j < grs.size(); j++) {
+                if (nt == grs[j]) {
+                    if (j == (grs.size() - 1)) {
+                        set<char> der = calc_follow(gram[i].first, gram, n);
+                        for (set<char>::iterator it = der.begin(); it != der.end(); ++it) {
+                            fl.insert(*it);
+                        }
+                    } else {
+                        if (!isupper(grs[j + 1])) fl.insert(grs[j + 1]);
+                        else {
+                            set<char> der2 = calc_first(grs[j + 1], gram, n);
+                            for (set<char>::iterator it = der2.begin(); it != der2.end(); ++it) {
+                                fl.insert(*it);
+                            }
+                        }
+                    }
+                    goto end;
+                }
+            }
+        }
+    }
+end:
+    return fl;
+}
+
+int main() {
+    int n;
+    cout << "lines:";
+    cin >> n;
+    
+    vector< pair<char,vector<string> > > gram;
+    cout << "grammar:\n";
+    fflush(stdin);
+
+    for (int i = 0; i < n; i++) {
+        string s;
+        cin >> s;
+        char lh = s[0];
+        vector<string> t;
+        string temp = "";
+        for (int j = 3; j < s.length(); j++) {
+            if (s[j] == '/') {
+                t.push_back(temp);
+                temp = "";
+            } else {
+                temp += s[j];
+            }
+        }
+        t.push_back(temp);
+        gram.push_back({lh, t});
+    }
+
+    vector<pair<char,vector<char> > > first;
+    vector<pair<char,vector<char> > > follow;
+    first.resize(n);
+    follow.resize(n);
+
+    for (int i = 0; i < n; i++) {
+        first[i] = {gram[i].first, {}};
+        follow[i] = {gram[i].first, {}};
+    }
+
+    for (int i = 0; i < n; i++) {
+        set<char> st = calc_first(gram[i].first, gram, n);
+        vector<char> te;
+        for (set<char>::iterator it = st.begin(); it != st.end(); ++it) {
+            te.push_back(*it);
+        }
+        first[i].second = te;
+    }
+
+    // Display First sets
+    for (int i = 0; i < n; i++) {
+        cout << "First[" << first[i].first << "] {";
+        for (int j = 0; j < first[i].second.size(); j++) {
+            cout << first[i].second[j];
+            if (j != first[i].second.size() - 1) cout << ",";
+        }
+        cout << "}\n";
+    }
+
+    // Calculate and display Follow sets
+    for (int i = 0; i < n; i++) {
+        set<char> st = calc_follow(gram[i].first, gram, n);
+        vector<char> te;
+        for (set<char>::iterator it = st.begin(); it != st.end(); ++it) {
+            te.push_back(*it);
+        }
+        follow[i].second = te;
+    }
+
+    for (int i = 0; i < n; i++) {
+        cout << "Follow[" << follow[i].first << "] {";
+        for (int j = 0; j < follow[i].second.size(); j++) {
+            cout << follow[i].second[j];
+            if (j != follow[i].second.size() - 1) cout << ",";
+        }
+        cout << "}\n";
+    }
+
+    return 0;
+}
+
+Removing Left recursion
+Working
+#include <bits/stdc++.h>
+using namespace std;
+
+// Function to remove left recursion from a single non-terminal grammar
+void removeLeftRecursion(const string& nonTerminal, const vector<string>& productions) {
+    vector<string> alpha, beta;
+
+    // Separate productions into alpha (left-recursive) and beta (non-left-recursive)
+    for (const string& production : productions) {
+        if (production[0] == nonTerminal[0]) {
+            alpha.push_back(production.substr(1)); // Remove the left recursion part
+        } else {
+            beta.push_back(production);
+        }
+    }
+
+    if (alpha.empty()) {
+        // No left recursion present
+        cout << nonTerminal << " -> ";
+        for (size_t i = 0; i < productions.size(); ++i) {
+            cout << productions[i];
+            if (i < productions.size() - 1) cout << " | ";
+        }
+        cout << endl;
+        return;
+    }
+
+    // Create new grammar rules
+    string newNonTerminal = nonTerminal + "'";
+    cout << nonTerminal << " -> ";
+    for (size_t i = 0; i < beta.size(); ++i) {
+        cout << beta[i] << newNonTerminal;
+        if (i < beta.size() - 1) cout << " | ";
+    }
+    cout << endl;
+
+    cout << newNonTerminal << " -> ";
+    for (size_t i = 0; i < alpha.size(); ++i) {
+        cout << alpha[i] << newNonTerminal << " | ";
+    }
+    cout << "\u03B5" << endl; // ε denotes the empty string
+}
+
+int main() {
+    string nonTerminal;
+    int n;
+
+    // Input the non-terminal
+    cout << "Enter the non-terminal: ";
+    cin >> nonTerminal;
+
+    // Input the number of productions
+    cout << "Enter the number of productions for " << nonTerminal << ": ";
+    cin >> n;
+
+    vector<string> productions;
+    cout << "Enter the productions (e.g., Aa, b, Ac, d):\n";
+
+    // Input the productions dynamically
+    for (int i = 0; i < n; ++i) {
+        string production;
+        cin >> production;
+        productions.push_back(production);
+    }
+
+    // Output the original grammar
+    cout << "\nOriginal Grammar:\n";
+    cout << nonTerminal << " -> ";
+    for (size_t i = 0; i < productions.size(); ++i) {
+        cout << productions[i];
+        if (i < productions.size() - 1) cout << " | ";
+    }
+    cout << endl;
+
+    // Remove left recursion and output the updated grammar
+    cout << "\nGrammar after removing left recursion:\n";
+    removeLeftRecursion(nonTerminal, productions);
+
+    return 0;
+}
+Left Factoring
+Not Working exactly
+#include <iostream>
+#include <map>
+#include <vector>
+#include <string>
+#include <algorithm>
+
+using namespace std;
+
+// Function to display the grammar
+void displayGrammar(const map<string, vector<string>>& grammar) {
+    for (const auto& rule : grammar) {
+        cout << rule.first << " -> ";
+        for (size_t i = 0; i < rule.second.size(); ++i) {
+            if (i > 0) cout << " | ";
+            cout << rule.second[i];
+        }
+        cout << endl;
+    }
+}
+
+// Helper function to find the common prefix in a set of productions
+string findCommonPrefix(const vector<string>& productions) {
+    if (productions.empty()) return "";
+   
+    string prefix = productions[0];
+    for (const auto& production : productions) {
+        size_t len = min(prefix.size(), production.size());
+        size_t i = 0;
+        while (i < len && prefix[i] == production[i]) {
+            ++i;
+        }
+        prefix = prefix.substr(0, i);
+        if (prefix.empty()) {
+            break;
+        }
+    }
+    return prefix;
+}
+
+// Function to remove left factoring from the grammar
+void removeLeftFactoring(map<string, vector<string>>& grammar) {
+    map<string, vector<string>> newGrammar;
+
+    for (const auto& rule : grammar) {
+        string nonTerminal = rule.first;
+        vector<string> productions = rule.second;
+
+        // Find the common prefix
+        string prefix = findCommonPrefix(productions);
+       
+        if (!prefix.empty() && prefix.length() > 0) {
+            // Create a new non-terminal if a common prefix exists
+            string newNonTerminal = nonTerminal + "'";
+            vector<string> newProductions;
+            vector<string> factoredProductions;
+
+            // Separate the common prefix and create new production rules
+            for (const auto& production : productions) {
+                if (production == prefix) {
+                    factoredProductions.push_back(newNonTerminal);
+                } else {
+                    factoredProductions.push_back(production.substr(prefix.size()));
+                }
+            }
+
+            // Add the new production for the non-terminal
+            newGrammar[nonTerminal].push_back(prefix + newNonTerminal);
+
+            // Add the new non-terminal and its productions
+            newGrammar[newNonTerminal].assign(factoredProductions.begin(), factoredProductions.end());
+        } else {
+            newGrammar[nonTerminal].assign(productions.begin(), productions.end());
+        }
+    }
+
+    // Replace the old grammar with the new one
+    grammar = newGrammar;
+}
+
+int main() {
+    // Dynamic Input Grammar
+    map<string, vector<string>> grammar;
+    int numRules;
+
+    cout << "Enter the number of production rules: ";
+    cin >> numRules;
+
+    for (int i = 0; i < numRules; ++i) {
+        string nonTerminal;
+        cout << "Enter non-terminal (e.g., A): ";
+        cin >> nonTerminal;
+
+        int numProductions;
+        cout << "Enter the number of productions for " << nonTerminal << ": ";
+        cin >> numProductions;
+
+        vector<string> productions;
+        for (int j = 0; j < numProductions; ++j) {
+            string production;
+            cout << "Enter production " << j + 1 << " (e.g., ab or abc): ";
+            cin >> production;
+            productions.push_back(production);
+        }
+
+        grammar[nonTerminal] = productions;
+    }
+
+    cout << "\nOriginal Grammar:" << endl;
+    displayGrammar(grammar);
+
+    // Remove left factoring
+    removeLeftFactoring(grammar);
+
+    cout << "\nGrammar after removing left factoring:" << endl;
+    displayGrammar(grammar);
+
+    return 0;
+}
+Output:
+Enter the number of production rules: 1
+Enter non-terminal (e.g., A): A
+Enter the number of productions for A: 3
+Enter production 1 (e.g., ab or abc): abc
+Enter production 2 (e.g., ab or abc): abd
+Enter production 3 (e.g., ab or abc): abee
+
+Original Grammar:
+A -> abc | abd | abee
+
+Grammar after removing left factoring:
+A -> abA'
+A' -> c | d | ee
+Predictive Parser
+#include<bits/stdc++.h>
+using namespace std;
+
+set<char> calc_first(char nt,vector<pair<char,vector<string> > > &gram,int n){
+	vector<string> prodn;
+	for(int i=0;i<n;i++){
+	if(gram[i].first==nt){
+		prodn=gram[i].second;
+		break;
+		}
+	}
+	set<char> ans;
+	for(int i=0;i<prodn.size();i++){
+		if(!isupper(prodn[i][0])) ans.insert(prodn[i][0]);
+		else{
+			int ind=0;
+			while(ind<(prodn[i].size())){
+				bool eps=false;
+				set<char> sfirst=calc_first(prodn[i][ind],gram,n);
+				set<char>::iterator itr;
+				for(itr=sfirst.begin();itr != sfirst.end();itr++){
+					if(*itr=='#') eps=true;
+					else ans.insert(*itr);
+				}
+				if(eps && ind==(prodn[i].size()-1)) ans.insert('#');
+				if(eps) ind++;
+				else break;
+			}
+			}
+	}
+	return ans;
+}
+
+set<char> calc_follow(char nt,vector<pair<char,vector<string> > > &gram,int n){
+	set<char> ans;
+	if(nt==gram[0].first) ans.insert('$');
+	for(int i=0;i<n;i++){
+		vector<string> prodn=gram[i].second;
+		for(int j=0;j<prodn.size();j++){
+			string pro=prodn[j];
+			for(int k=0;k<pro.size();k++){
+				if(pro[k]==nt){
+					if(k==pro.size()-1 && gram[i].first!=nt){
+						set<char> sfollow=calc_follow(gram[i].first,gram,n);
+						set<char>::iterator itr;
+						for(itr=sfollow.begin();itr != sfollow.end();itr++){
+							if(*itr=='#') continue;
+							ans.insert(*itr);
+						}
+					}
+					else if(!isupper(pro[k+1]) && pro[k+1]!='#') ans.insert(pro[k+1]);
+					else{
+						int ind=k+1;
+						while(ind<pro.size()){
+							bool eps=false;
+							set<char>::iterator itr;
+							set<char> sfirst=calc_first(pro[ind],gram,n);
+							for(itr=sfirst.begin();itr != sfirst.end();itr++){
+								if(*itr=='#') eps=true;
+								else ans.insert(*itr);
+								}
+							if(ind==pro.size()-1 && eps && gram[i].first!=nt){
+								set<char> sfollow=calc_follow(gram[i].first,gram,n);
+								set<char>::iterator itr;
+								for(itr=sfollow.begin();itr != sfollow.end();itr++){
+									if(*itr=='#') continue;
+									ans.insert(*itr);
+								}
+							}
+							if(!isupper(pro[ind+1]) && pro[ind+1]!='#'){
+								ans.insert(pro[ind+1]);
+								break;
+							}
+							if(eps) ind++;
+							else break;
+						}
+					}
+				}
+			}
+		}
+	}
+return ans;
+}
+
+void display(map<pair<char,char>,string> &mp){
+	cout<<"Predictive Parse Table : "<<endl;
+	map<pair<char,char>,string>:: iterator itr;
+	for(itr=mp.begin();itr!=mp.end();itr++){
+		cout<<"M["<<((itr->first).first)<<","<<((itr->first).second)<<"]="<<(itr->second)<<endl;
+	}
+}
+
+void build_table(vector<pair<char,vector<string> > > &gram,int n,map<pair<char,char>,string> &parse_table){
+	for(int i=0;i<n;i++){
+	char nt=gram[i].first;
+	vector<string> prodn=gram[i].second;
+	for(int j=0;j<prodn.size();j++){
+		string pro=prodn[j];
+		if(!isupper(pro[0]) && pro[0]!='#'){
+			parse_table[{nt,pro[0]}]=pro;
+		}
+		else{
+			set<char> fst=calc_first(pro[0],gram,n);
+			set<char>::iterator itr;
+			for(itr=fst.begin();itr != fst.end();itr++){
+				if(*itr=='#') continue;
+				parse_table[{nt,*itr}]=pro;
+			}
+			if(fst.find('#')!=fst.end() || pro[0]=='#'){
+				set<char> flw=calc_follow(nt,gram,n);
+				for(itr=flw.begin();itr != flw.end();itr++){
+					if(*itr=='\0' || *itr==' ') continue;
+					parse_table[{nt,*itr}]='#';
+				}
+			}
+		}
+	}
+	}
+}
+
+bool parse_string(string inp,map<pair<char,char>,string> &parse_table,char start){
+	stack<char> st;
+	st.push('$');
+	st.push(start);
+	int i=0;
+	while(!st.empty()){
+		char top=st.top();
+		char cur=inp[i];
+	if(top==cur){
+		i++;
+		st.pop();
+	}
+	else if(!isupper(top)){
+		return false;
+	}
+	else if(parse_table.find({top,cur})!=parse_table.end()){
+		st.pop();
+		string pro=parse_table[{top,cur}];
+		if(pro!="#"){
+			for(int j=pro.size()-1;j>=0;j--){
+				st.push(pro[j]);
+			}
+		}
+	}
+	else return false;
+	}
+	return (i==inp.size());
+}
+
+int main(){
+	int n;
+	cout<<"Enter the no.of lines of the grammar: ";
+		cin>>n;
+	vector<pair<char,vector<string> > > gram;
+	cout<<"Enter the lines of grammar(put epsilon as #):\n";
+	for(int i=0;i<n;i++){
+		string ln;
+		cin>>ln;
+		string prod="";
+		gram.push_back({ln[0],{}});
+		for(int j=3;j<ln.size();j++){
+		if(ln[j]=='/'){
+			gram[i].second.push_back(prod);
+			prod="";
+		}
+		else prod+=ln[j];
+		}
+		gram[i].second.push_back(prod);
+	}
+	vector<pair<char,vector<char> > > first(n),follow(n);
+	for(int i=0;i<n;i++){
+		first[i]={gram[i].first,{}};
+		follow[i]={gram[i].first,{}};
+	}
+	for(int i=0;i<n;i++){
+		set<char> st=calc_first(gram[i].first,gram,n);
+		vector<char> tmp;
+		set<char>::iterator itr;
+		for(itr=st.begin();itr!=st.end();itr++) tmp.push_back(*itr);
+			first[i].second=tmp;
+	}
+	for(int i=0;i<n;i++){
+		cout<<"First of "<<first[i].first<<" : {"<<first[i].second[0];
+		for(int j=1;j<first[i].second.size();j++) cout<<","<<first[i].second[j];
+			cout<<"}"<<endl;
+	}
+	for(int i=0;i<n;i++){
+		set<char> st=calc_follow(gram[i].first,gram,n);
+		vector<char> tmp;
+		set<char>::iterator itr;
+		for(itr=st.begin();itr!=st.end();itr++) tmp.push_back(*itr);
+			follow[i].second=tmp;
+	}
+	for(int i=0;i<n;i++){
+		cout<<"Follow of "<<follow[i].first<<" : {"<<follow[i].second[0];
+		for(int j=1;j<follow[i].second.size();j++) cout<<","<<follow[i].second[j];
+			cout<<"}"<<endl;
+	}
+	map<pair<char,char>,string> parse_table;
+	build_table(gram,n,parse_table);
+	display(parse_table);
+	string inp;
+	cout<<"Enter the string to parse : ";
+	cin>>inp;
+	bool f=parse_string(inp,parse_table,gram[0].first);
+	if(f) cout<<"String "<<inp<<" is a valid string"<<endl;
+	else cout<<"String "<<inp<<" is not a valid string"<<endl;
+	return 0;
+}
+
+(or)
+
+#include<bits/stdc++.h>
+using namespace std;
+
+set<char> calc_first(char nt,vector<pair<char,vector<string> > > &gram,int n){
+vector<string> prodn;
+for(int i=0;i<n;i++){
+if(gram[i].first==nt){
+prodn=gram[i].second;
+break;
+}
+}
+set<char> ans;
+for(int i=0;i<prodn.size();i++){
+if(!isupper(prodn[i][0])) ans.insert(prodn[i][0]);
+else{
+int ind=0;
+while(ind<(prodn[i].size())){
+bool eps=false;
+set<char> sfirst=calc_first(prodn[i][ind],gram,n);
+set<char>::iterator itr;
+for(itr=sfirst.begin();itr != sfirst.end();itr++){
+if(*itr=='#') eps=true;
+else ans.insert(*itr);
+}
+if(eps && ind==(prodn[i].size()-1)) ans.insert('#');
+if(eps) ind++;
+else break;
+}
+}
+}
+return ans;
+}
+
+set<char> calc_follow(char nt,vector<pair<char,vector<string> > > &gram,int n){
+set<char> ans;
+if(nt==gram[0].first) ans.insert('$');
+for(int i=0;i<n;i++){
+vector<string> prodn=gram[i].second;
+for(int j=0;j<prodn.size();j++){
+string pro=prodn[j];
+for(int k=0;k<pro.size();k++){
+if(pro[k]==nt){
+if(k==pro.size()-1 && gram[i].first!=nt){
+set<char> sfollow=calc_follow(gram[i].first,gram,n);
+set<char>::iterator itr;
+for(itr=sfollow.begin();itr != sfollow.end();itr++){
+if(*itr=='#') continue;
+ans.insert(*itr);
+}
+}
+else if(!isupper(pro[k+1]) && pro[k+1]!='#') ans.insert(pro[k+1]);
+else{
+int ind=k+1;
+while(ind<pro.size()){
+bool eps=false;
+set<char>::iterator itr;
+set<char> sfirst=calc_first(pro[ind],gram,n);
+for(itr=sfirst.begin();itr != sfirst.end();itr++){
+if(*itr=='#') eps=true;
+else ans.insert(*itr);
+}
+if(ind==pro.size()-1 && eps && gram[i].first!=nt){
+set<char> sfollow=calc_follow(gram[i].first,gram,n);
+set<char>::iterator itr;
+for(itr=sfollow.begin();itr != sfollow.end();itr++){
+if(*itr=='#') continue;
+ans.insert(*itr);
+}
+}
+if(!isupper(pro[ind+1]) && pro[ind+1]!='#'){
+ans.insert(pro[ind+1]);
+break;
+}
+if(eps) ind++;
+else break;
+}
+}
+}
+}
+}
+}
+return ans;
+}
+
+void display(map<pair<char,char>,string> &mp){
+cout<<"Predictive Parse Table : "<<endl;
+map<pair<char,char>,string>:: iterator itr;
+for(itr=mp.begin();itr!=mp.end();itr++){
+cout<<"M["<<((itr->first).first)<<","<<((itr->first).second)<<"]="<<(itr->second)<<endl;
+}
+}
+
+void build_table(vector<pair<char,vector<string> > > &gram,int n,map<pair<char,char>,string> &parse_table){
+for(int i=0;i<n;i++){
+char nt=gram[i].first;
+vector<string> prodn=gram[i].second;
+for(int j=0;j<prodn.size();j++){
+string pro=prodn[j];
+if(!isupper(pro[0]) && pro[0]!='#'){
+parse_table[{nt,pro[0]}]=pro;
+}
+else{
+set<char> fst=calc_first(pro[0],gram,n);
+set<char>::iterator itr;
+for(itr=fst.begin();itr != fst.end();itr++){
+if(*itr=='#') continue;
+parse_table[{nt,*itr}]=pro;
+}
+if(fst.find('#')!=fst.end() || pro[0]=='#'){
+set<char> flw=calc_follow(nt,gram,n);
+for(itr=flw.begin();itr != flw.end();itr++){
+if(*itr=='\0' || *itr==' ') continue;
+parse_table[{nt,*itr}]='#';
+}
+}
+}
+}
+}
+}
+
+bool parse_string(string inp,map<pair<char,char>,string> &parse_table,char start){
+stack<char> st;
+st.push('$');
+st.push(start);
+int i=0;
+while(!st.empty()){
+char top=st.top();
+char cur=inp[i];
+if(top==cur){
+i++;
+st.pop();
+}
+else if(!isupper(top)){
+return false;
+}
+else if(parse_table.find({top,cur})!=parse_table.end()){
+st.pop();
+string pro=parse_table[{top,cur}];
+if(pro!="#"){
+for(int j=pro.size()-1;j>=0;j--){
+st.push(pro[j]);
+}
+}
+}
+else return false;
+}
+return (i==inp.size());
+}
+
+int main(){
+int n;
+cout<<"Enter the no.of lines of the grammar: ";
+cin>>n;
+vector<pair<char,vector<string> > > gram;
+cout<<"Enter the lines of grammar(put epsilon as #):\n";
+for(int i=0;i<n;i++){
+string ln;
+cin>>ln;
+string prod="";
+gram.push_back({ln[0],{}});
+for(int j=3;j<ln.size();j++){
+if(ln[j]=='/'){
+gram[i].second.push_back(prod);
+prod="";
+}
+else prod+=ln[j];
+}
+gram[i].second.push_back(prod);
+}
+vector<pair<char,vector<char> > > first(n),follow(n);
+for(int i=0;i<n;i++){
+first[i]={gram[i].first,{}};
+follow[i]={gram[i].first,{}};
+}
+for(int i=0;i<n;i++){
+set<char> st=calc_first(gram[i].first,gram,n);
+vector<char> tmp;
+set<char>::iterator itr;
+for(itr=st.begin();itr!=st.end();itr++) tmp.push_back(*itr);
+first[i].second=tmp;
+}
+for(int i=0;i<n;i++){
+cout<<"First of "<<first[i].first<<" : {"<<first[i].second[0];
+for(int j=1;j<first[i].second.size();j++) cout<<","<<first[i].second[j];
+cout<<"}"<<endl;
+}
+for(int i=0;i<n;i++){
+set<char> st=calc_follow(gram[i].first,gram,n);
+vector<char> tmp;
+set<char>::iterator itr;
+for(itr=st.begin();itr!=st.end();itr++) tmp.push_back(*itr);
+follow[i].second=tmp;
+}
+for(int i=0;i<n;i++){
+cout<<"Follow of "<<follow[i].first<<" : {"<<follow[i].second[0];
+for(int j=1;j<follow[i].second.size();j++) cout<<","<<follow[i].second[j];
+cout<<"}"<<endl;
+}
+map<pair<char,char>,string> parse_table;
+build_table(gram,n,parse_table);
+display(parse_table);
+string inp;
+cout<<"Enter the string to parse : ";
+cin>>inp;
+bool f=parse_string(inp,parse_table,gram[0].first);
+if(f) cout<<"String "<<inp<<" is a valid string"<<endl;
+else cout<<"String "<<inp<<" is not a valid string"<<endl;
+return 0;
+}
+
+Three Address Code
+
+#include<bits/stdc++.h>
+using namespace std;
+
+// Function to return precedence of operators
+int precedence(char op) {
+    if (op == '+' || op == '-') return 1;
+    if (op == '*' || op == '/') return 2;
+    return 0;
+}
+
+// Function to perform arithmetic operation
+int applyOp(int a, int b, char op) {
+    if (op == '+') return a + b;
+    if (op == '-') return a - b;
+    if (op == '*') return a * b;
+    if (op == '/') return a / b;
+    return 0;
+}
+
+// Function to generate three-address code
+void generateThreeAddressCode(string expression) {
+    stack<char> operators; // Stack for operators
+    stack<string> operands; // Stack for operands
+    int tempCount = 1; // Temporary variable counter
+
+    for (int i = 0; i < expression.length(); i++) {
+        char ch = expression[i];
+        
+        // If current character is a digit or variable (a-z, A-Z)
+        if (isalnum(ch)) {
+            operands.push(string(1, ch)); // Push operand
+        } 
+        // If current character is '(', push to operator stack
+        else if (ch == '(') {
+            operators.push(ch);
+        } 
+        // If current character is ')', pop from operator stack until '(' is encountered
+        else if (ch == ')') {
+            while (!operators.empty() && operators.top() != '(') {
+                char op = operators.top();
+                operators.pop();
+                string val2 = operands.top();
+                operands.pop();
+                string val1 = operands.top();
+                operands.pop();
+                string tempVar = "t" + to_string(tempCount++);
+                operands.push(tempVar);
+                cout << tempVar << " = " << val1 << " " << op << " " << val2 << endl;
+            }
+            operators.pop(); // Pop '('
+        }
+        // If current character is an operator, handle precedence and apply operators
+        else if (ch == '+' || ch == '-' || ch == '*' || ch == '/') {
+            while (!operators.empty() && precedence(operators.top()) >= precedence(ch)) {
+                char op = operators.top();
+                operators.pop();
+                string val2 = operands.top();
+                operands.pop();
+                string val1 = operands.top();
+                operands.pop();
+                string tempVar = "t" + to_string(tempCount++);
+                operands.push(tempVar);
+                cout << tempVar << " = " << val1 << " " << op << " " << val2 << endl;
+            }
+            operators.push(ch); // Push current operator
+        }
+    }
+    
+    // Apply remaining operators
+    while (!operators.empty()) {
+        char op = operators.top();
+        operators.pop();
+        string val2 = operands.top();
+        operands.pop();
+        string val1 = operands.top();
+        operands.pop();
+        string tempVar = "t" + to_string(tempCount++);
+        operands.push(tempVar);
+        cout << tempVar << " = " << val1 << " " << op << " " << val2 << endl;
+    }
+}
+
+int main() {
+    string expression = "a+b*c-d/e";  // Example input expression
+    cout << "Three Address Code for the expression: " << endl;
+    generateThreeAddressCode(expression);
+    return 0;
+}
+Machine Code
+#include<bits/stdc++.h>
+using namespace std;
+
+// Define a structure for the AST Node
+struct ASTNode {
+    string value;      // Operator (+, -, *, /) or operand (e.g., "3", "5")
+    ASTNode* left;     // Left child
+    ASTNode* right;    // Right child
+
+    // Constructor for creating a node
+    ASTNode(string val, ASTNode* l = nullptr, ASTNode* r = nullptr)
+        : value(val), left(l), right(r) {}
+};
+
+// Function to check if a string is an operator
+bool isOperator(const string& op) {
+    return op == "+" || op == "-" || op == "*" || op == "/";
+}
+
+// Function to check if a character is an operator
+bool isOperator(char c) {
+    return c == '+' || c == '-' || c == '*' || c == '/';
+}
+
+// Function to return precedence of operators
+int precedence(char op) {
+    if (op == '+' || op == '-') return 1;
+    if (op == '*' || op == '/') return 2;
+    return 0;
+}
+
+// Function to convert infix expression to AST
+ASTNode* parseExpressionToAST(const string& expression) {
+    stack<ASTNode*> operands; // Stack for operands (numbers or sub-expressions)
+    stack<char> operators;    // Stack for operators
+
+    for (size_t i = 0; i < expression.length(); i++) {
+        char ch = expression[i];
+
+        // Ignore spaces
+        if (isspace(ch)) continue;
+
+        // If the character is a digit, parse the full number
+        if (isdigit(ch)) {
+            string number;
+            while (i < expression.length() && isdigit(expression[i])) {
+                number += expression[i++];
+            }
+            i--; // Adjust index after the loop
+            operands.push(new ASTNode(number));
+        }
+        // If the character is '(', push it to the operators stack
+        else if (ch == '(') {
+            operators.push(ch);
+        }
+        // If the character is ')', pop operators until '(' is encountered
+        else if (ch == ')') {
+            while (!operators.empty() && operators.top() != '(') {
+                char op = operators.top();
+                operators.pop();
+
+                ASTNode* right = operands.top();
+                operands.pop();
+                ASTNode* left = operands.top();
+                operands.pop();
+
+                operands.push(new ASTNode(string(1, op), left, right));
+            }
+            operators.pop(); // Remove the '('
+        }
+        // If the character is an operator
+        else if (isOperator(ch)) {
+            while (!operators.empty() && precedence(operators.top()) >= precedence(ch)) {
+                char op = operators.top();
+                operators.pop();
+
+                ASTNode* right = operands.top();
+                operands.pop();
+                ASTNode* left = operands.top();
+                operands.pop();
+
+                operands.push(new ASTNode(string(1, op), left, right));
+            }
+            operators.push(ch);
+        }
+    }
+
+    // Process remaining operators
+    while (!operators.empty()) {
+        char op = operators.top();
+        operators.pop();
+
+        ASTNode* right = operands.top();
+        operands.pop();
+        ASTNode* left = operands.top();
+        operands.pop();
+
+        operands.push(new ASTNode(string(1, op), left, right));
+    }
+
+    return operands.top();
+}
+
+// Function to generate machine code from AST
+pair<vector<string>, int> generateMachineCode(ASTNode* node, int registerIndex = 0) {
+    vector<string> machineCode;
+
+    if (!node) return {machineCode, registerIndex};
+
+    // If the node is a number (leaf node)
+    if (!node->left && !node->right) {
+        machineCode.push_back("LOAD " + node->value + " R" + to_string(registerIndex));
+        return {machineCode, registerIndex + 1};
+    }
+
+    // Recursively process the left subtree
+    auto [leftCode, leftRegister] = generateMachineCode(node->left, registerIndex);
+    machineCode.insert(machineCode.end(), leftCode.begin(), leftCode.end());
+
+    // Recursively process the right subtree
+    auto [rightCode, rightRegister] = generateMachineCode(node->right, leftRegister);
+    machineCode.insert(machineCode.end(), rightCode.begin(), rightCode.end());
+
+    // Generate the machine code for the operator
+    if (node->value == "+")
+        machineCode.push_back("ADD R" + to_string(rightRegister - 1) + ", R" + to_string(leftRegister - 1));
+    else if (node->value == "-")
+        machineCode.push_back("SUB R" + to_string(rightRegister - 1) + ", R" + to_string(leftRegister - 1));
+    else if (node->value == "*")
+        machineCode.push_back("MUL R" + to_string(rightRegister - 1) + ", R" + to_string(leftRegister - 1));
+    else if (node->value == "/")
+        machineCode.push_back("DIV R" + to_string(rightRegister - 1) + ", R" + to_string(leftRegister - 1));
+
+    return {machineCode, rightRegister};
+}
+
+int main() {
+    // Input the arithmetic expression
+    cout << "Enter an arithmetic expression (e.g., 3 + 5 * (10 - 2)): ";
+    string expression;
+    getline(cin, expression);
+
+    // Parse the expression into an AST
+    ASTNode* ast = parseExpressionToAST(expression);
+
+    // Generate machine code
+    auto [machineCode, _] = generateMachineCode(ast);
+
+    // Print the generated machine code
+    cout << "Generated Machine Code:\n";
+    for (const string& instruction : machineCode) {
+        cout << instruction << endl;
+    }
+
+    return 0;
+}
+
+
+
